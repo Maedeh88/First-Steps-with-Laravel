@@ -29,7 +29,7 @@
         <div class="col-lg-12">
             <a class="btn btn-primary" href="{{ route('index_currency') }}" style="margin-top: 3%; margin-bottom: 1%">
                 Back </a>
-            <a class="btn btn-secondary float-right" href="{{route('add_banner', $id)}}"
+            <a class="btn btn-secondary float-right" href="{{route('add_banner', $currency->id)}}"
                style="margin-top: 3%; margin-bottom: 1%; background-color: darkgreen">Add Banner</a>
         </div>
     </div>
@@ -47,20 +47,22 @@
             <th>Image</th>
             <th>Action</th>
         </tr>
-        @foreach ($banners as $banner)
+        @foreach ($currency->banners as $banner)
             <tr>
-                <td>{{$banner->id }}</td>
-                <td>{{$banner->type->name}}</td>
-                <td>{{ $banner->title }}</td>
-                <td>
-                    <img style="" src={{url('/BannerImages/'.$banner->image)}} width="40px" height="40px"
-                         alt="no file"/>
-                </td>
-                <td>
-                    <a class="btn btn-primary"
-                       href="{{ route('remove_banner', [$id, $banner->id])}}"
-                       style="background-color: darkred; border-color: darkred">Delete</a>
-                </td>
+                @isset($banner->id)
+                    <td>{{$banner->id}}</td>
+                    <td>{{$banner->type->name}}</td>
+                    <td>{{ $banner->title }}</td>
+                    <td>
+                        <img style="" src={{url('/BannerImages/'.$banner->image)}} width="40px" height="40px"
+                             alt="no file"/>
+                    </td>
+                    <td>
+                        <a class="btn btn-primary"
+                           href="{{ route('remove_banner', [$id, $banner->id])}}"
+                           style="background-color: darkred; border-color: darkred">Delete</a>
+                    </td>
+                @endisset
             </tr>
         @endforeach
     </table>

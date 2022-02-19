@@ -3,9 +3,10 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        table{
+        table {
             table-layout: fixed;
         }
+
         td {
             /*max-width: 100px;*/
             overflow: hidden;
@@ -15,7 +16,8 @@
             text-align: center;
             padding: 10px;
         }
-        th{
+
+        th {
             text-align: center;
         }
     </style>

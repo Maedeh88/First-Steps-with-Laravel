@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Currency\attachBanner;
 use App\Http\Requests\Currency\store;
 use App\Http\Requests\Currency\update;
+use App\Logic\Manager\CurrencyManager;
 use App\Models\Banner;
 use App\Models\Currency;
 use App\Repositories\Interfaces\CurrencyRepositoryInterface;
@@ -20,12 +21,6 @@ use Nette\Utils\Type;
 
 class CurrencyController extends Controller
 {
-    private $currency_repository;
-
-    public function __construct(CurrencyRepositoryInterface $currency_repository)
-    {
-        $this->currency_repository = $currency_repository;
-    }
     /**
      * Display a listing of the resource.
      *
@@ -33,9 +28,7 @@ class CurrencyController extends Controller
      */
     public function index()
     {
-
-//        $data['currencies'] = Currency::orderBy('id', 'desc')->paginate(5);
-        $data['currencies']=$this->currency_repository->paginate(8);
+        $data['currencies'] = CurrencyManager::getCurrencyManagerInstance()->paginate(8);
 
         return view('crud.index', $data);
     }
@@ -58,18 +51,9 @@ class CurrencyController extends Controller
      */
     public function store(store $request)
     {
-        $icon_name = time() . '.' . $request->icon->extension();
-        $request->icon->move(public_path('icon'), $icon_name);
 
-        $digital_currency = new Currency();
-        $digital_currency->name = $request->name;
-        $digital_currency->symbol = $request->symbol;
-        $digital_currency->rank = $request->rank;
-        $digital_currency->icon = $icon_name;
-        $digital_currency->total_volume = $request->total_volume;
-        $digital_currency->daily_volume = $request->daily_volume;
         try {
-            $digital_currency->save();
+            CurrencyManager::getCurrencyManagerInstance()->store($request);
 
         } catch (Exception $e) {
             Log::error($e->getMessage());
@@ -87,7 +71,8 @@ class CurrencyController extends Controller
      */
     public function show(int $id)
     {
-        $currency = Currency::query()->findOrFail($id);
+
+        $currency = CurrencyManager::getCurrencyManagerInstance()->getById($id);
         return view('crud.show', compact('currency'));
     }
 
@@ -99,7 +84,7 @@ class CurrencyController extends Controller
      */
     public function edit(int $id)
     {
-        $currency = Currency::query()->findOrFail($id);
+        $currency = CurrencyManager::getCurrencyManagerInstance()->getById($id);
         return view('crud.edit', compact('currency'));
     }
 
@@ -112,23 +97,8 @@ class CurrencyController extends Controller
      */
     public function update(update $request, $id)
     {
-        $currency = Currency::find($id);
-        if ($request->icon != null) {
-            if (file_exists("icon/" . $currency->icon)) {
-                unlink("icon/" . $currency->icon);
-            }
-            $icon_name = time() . '.' . $request->icon->extension();
-            $request->icon->move(public_path('icon'), $icon_name);
-            $currency->icon = $icon_name;
-        }
-        $currency->name = $request->name;
-        $currency->rank = $request->rank;
-        $currency->symbol = $request->symbol;
-        $currency->total_volume = $request->total_volume;
-        $currency->daily_volume = $request->daily_volume;
-
         try {
-            $currency->save();
+            CurrencyManager::getCurrencyManagerInstance()->update($request, $id);
         } catch (Exception $e) {
             Log::error($e->getMessage());
             return redirect()->route('index_currency')->with('error', 'your data has not been updated successfully');
@@ -145,11 +115,8 @@ class CurrencyController extends Controller
      */
     public function destroy(Currency $currency)
     {
-        if (file_exists("icon/" . $currency->icon)) {
-            unlink("icon/" . $currency->icon);
-        }
         try {
-            $currency->delete();
+            CurrencyManager::getCurrencyManagerInstance()->destroy($currency);
 
         } catch (Exception $e) {
             Log::error($e->getMessage());
@@ -164,10 +131,14 @@ class CurrencyController extends Controller
     public function getBanners(int $id)
     {
 
-        $currency = Currency::query()->findOrFail($id);
-        $data['banners'] = $currency->banners;
+//        $currency = Currency::query()->findOrFail($id);
+//        $data['banners'] = $currency->banners();
+       $currency = CurrencyManager::getCurrencyManagerInstance()->getById($id);
+//        $data['banners'] = $currency->banners();
+//        dd($data['banners']);
 
-        return view('crud.get_banners', $data)->with(['id' => $id]);
+//        return view('crud.get_banners', $data)->with(['id' => $id]);
+        return view('crud.get_banners', compact('currency'));
     }
 
     /***
@@ -178,10 +149,9 @@ class CurrencyController extends Controller
     public function addBanner(int $id)
     {
 
-        $currency = Currency::query()->findOrFail($id);
+        $currency = CurrencyManager::getCurrencyManagerInstance()->getById($id);
 
         $data['all_banners'] = Banner::orderBy('id', 'desc')->get();
-
 
         return view('crud.add_banner', compact('currency'), $data);
 
@@ -195,13 +165,13 @@ class CurrencyController extends Controller
      */
     public function attachBanner(attachBanner $request, int $currency_id)
     {
-
-        $currency = Currency::query()->findOrFail($currency_id);
+        $currency = CurrencyManager::getCurrencyManagerInstance()->getById($currency_id);
         try {
             $currency->banners()->syncWithoutDetaching($request->banners);
         } catch (Exception|QueryException $exception) {
+            dd($exception->getMessage());
             Log::error($exception->getMessage());
-            return redirect()->route('get_banners')->with('error', 'your data has not been updated successfully');
+            return redirect()->route('get_banners', $currency_id)->with('error', 'your data has not been updated successfully');
         }
         return redirect()->route('get_banners', $currency_id)->with('success', 'Your data has been updated');
     }
@@ -214,7 +184,7 @@ class CurrencyController extends Controller
      */
     public function removeBanner(int $currency_id, int $banner_id)
     {
-        $currency = Currency::query()->findOrFail($currency_id);
+        $currency = CurrencyManager::getCurrencyManagerInstance()->getBuId($currency_id);
         try {
             $currency->banners()->detach($banner_id);
         } catch (Exception $exception) {
